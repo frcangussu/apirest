@@ -1,0 +1,55 @@
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+$loader = require __DIR__ . '/../vendor/autoload.php';
+
+header('Content-Type', 'application/json;charset=utf-8');
+
+\Slim\Slim::registerAutoloader();
+$app = new \Slim\Slim();
+$app->response()->header('Content-Type', 'application/json;charset=utf-8');
+
+
+function getConn(){
+	try {
+		return new PDO('mysql:dbname=portalmangueiral;host=127.0.0.1', 'root', '123456', array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
+	} catch (PDOException $e) {
+		echo 'Connection failed: ' . $e->getMessage();
+	}
+}
+
+$app->get('/', function () {
+	echo "principal";
+});
+
+$app->get('/categoria', function (){
+	try {
+		$categorias = getConn()->query("SELECT * FROM categoria order by ordem")->fetchAll(PDO::FETCH_OBJ);
+		echo json_encode($categorias);
+	} catch (Exception $e) {
+		echo json_encode($e);
+	}
+});
+
+
+$app->put('/ordena/:ini_pos',function($ini_pos) use($app) {
+
+	$dados=$app->request;
+
+	echo json_encode($dados);
+
+	// $stmt = $getConn()->prepare("UPDATE categoria set ordem = :fin_pos where ordem = :ini_pos");
+
+	// $rslt = $stmt->execute(array(
+	// 	":ini_pos"=>$ini_pos,
+	// 	":fin_pos"=>$dados->post("fin_pos")
+	// 	));
+
+	// if ($rslt->rowCount()==1)
+	// 	echo json_encode(array('estado'=>true));
+	// else
+	// 	echo json_encode(array('estado'=>false,'mensaje'=>'Não foi possível alterar os dados'));
+});
+
+$app->run();

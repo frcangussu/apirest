@@ -1,0 +1,14 @@
+{
+  "name": "apirest",
+  "description": "rest api",
+  "main": "index.php",
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
