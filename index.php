@@ -36,5 +36,3 @@ $app->get('/categoria', function (){
 });
 
 $app->run();
-
-

@@ -73,7 +73,7 @@ $app->post('/inserir',function() use ($app){
 	}
 });
 
-$app->post('/altera',function() use ($app){
+$app->post('/alterar',function() use ($app){
 	$request = json_decode($app->getInstance()->request()->getBody());
 	$params = array( ":id"=>$request->id,
 					 ":nome"=>$request->nome,
