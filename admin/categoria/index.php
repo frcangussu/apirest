@@ -27,9 +27,15 @@ function getConn(){
 	}
 }
 
-$app->get('/', function () {
+$app->get('/', function() use ($app) {
+
+	$id = $app->request()->params('id');
+	$where = ($id) ? "WHERE ID = $id" : "";
+
+	$sql = "SELECT * FROM categoria $where order by ordem";
+
 	try {
-		$categorias = getConn()->query("SELECT * FROM categoria order by ordem")->fetchAll(PDO::FETCH_OBJ);
+		$categorias = getConn()->query($sql)->fetchAll(PDO::FETCH_OBJ);
 		echo json_encode($categorias);
 	} catch (Exception $e) {
 		echo json_encode($e);
