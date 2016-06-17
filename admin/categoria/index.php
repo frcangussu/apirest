@@ -81,16 +81,30 @@ $app->post('/inserir',function() use ($app){
 
 $app->post('/alterar',function() use ($app){
 	$request = json_decode($app->getInstance()->request()->getBody());
+	// die(json_encode($request));
+
 	$params = array( ":id"=>$request->id,
 					 ":nome"=>$request->nome,
 					 ":cor"=>$request->cor,
-					 ":fa_icone"=>$request->fa_icone,
-					 ":ordem"=>$request->ordem
+					 ":icone"=>$request->fa_icone
 	);
 	try {
-		$stmt = getConn()->prepare("UPDATE categoria set nome=:nome, cor=:cor, fa_icone=:fa_icone, ordem=:ordem where id=:id");
+		$stmt = getConn()->prepare("UPDATE categoria set nome=:nome, cor=:cor, icone=:icone where id=:id");
 		$rslt = $stmt->execute($params);
 		validaExecucao($rslt,"Alteração");
+	} catch (Exception $e) {
+		die (json_encode(array('estado'=>false,'texto'=>$e->getMessage())));
+	}
+
+});
+
+$app->post('/ordenar',function() use ($app){
+	$request = json_decode($app->getInstance()->request()->getBody());
+	$params = array( ":id"=>$request->id,":ordem"=>$request->ordem);
+	try {
+		$stmt = getConn()->prepare("UPDATE categoria set ordem=:ordem where id=:id");
+		$rslt = $stmt->execute($params);
+		validaExecucao($rslt,"Ordenação");
 	} catch (Exception $e) {
 		die (json_encode(array('estado'=>false,'texto'=>$e->getMessage())));
 	}
