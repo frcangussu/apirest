@@ -98,6 +98,19 @@ $app->post('/alterar',function() use ($app){
 
 });
 
+$app->post('/ordenar',function() use ($app){
+	$request = json_decode($app->getInstance()->request()->getBody());
+	$params = array( ":id"=>$request->id,":ordem"=>$request->ordem);
+	try {
+		$stmt = getConn()->prepare("UPDATE categoria set ordem=:ordem where id=:id");
+		$rslt = $stmt->execute($params);
+		validaExecucao($rslt,"Ordenação");
+	} catch (Exception $e) {
+		die (json_encode(array('estado'=>false,'texto'=>$e->getMessage())));
+	}
+
+});
+
 $app->put('/ordena/:ini_pos',function($ini_pos) use ($app) {
 
 	$messages = [];
