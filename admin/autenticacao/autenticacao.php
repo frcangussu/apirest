@@ -120,38 +120,6 @@
      return false;
    }
 
-   //-----------------------AUTENTICAR USUARIO ----------------------------------
-
-   /**
-    * Válida token gerado pelo facebook
-    *
-    * PHP version 5.6
-    *
-    * @category Autenticacao
-    * @package  Autenticacao
-    * @author   Guilherme Dias dos Santos <guigds.dias@gmail.com>
-    * @link     https://github.com/..
-    */
-   function validaTokenFacebook(){
-
-   }
-
-   //--------------------- AUTENTICAR USUARIO ----------------------------------
-
-   /**
-    * Válida token gerado pelo Google
-    *
-    * PHP version 5.6
-    *
-    * @category Autenticacao
-    * @package  Autenticacao
-    * @author   Guilherme Dias dos Santos <guigds.dias@gmail.com>
-    * @link     https://github.com/..
-    */
-   function validaTokenGoogle(){
-
-   }
-
  }
 
  ?>

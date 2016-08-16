@@ -61,22 +61,22 @@ $app->post('/cadastrar_usuario', function() use($app, $autenticacao, $conn) {
 			$usuario = new Usuario($conn->getConn());
 			$usuario->setNome($request->usuario->nome);
 			$usuario->setEmail($request->usuario->email);
-			$usuario->setSenha($request->usuario->senha);
-			$usuario->setSobreNome($request->usuario->sobreNome);
+			$usuario->tipoCadastro($request->usuario->tipoCadastro);
 
-			$rslt = $usuario->cadastrar(0); // 0 indica que é um cadastro pelo aplicativo
+			$usuario->setSobreNome('');
 
-			if($rslt > 0){
+			$usuario->cadastrar(); // 0 indica que é um cadastro pelo aplicativo
+
+			if($usuario->cadastrar()){
 					$token = $autenticacao->gerarToken($request->usuario->nome, $request->usuario->sobreNome);
 			}
 
 			die(json_encode($token));
 
 	} catch (Exception $e) {
-		die(json_encode(array("mensagem"=>'Não foi possivel realizar o cadastro. Ocorreu o erro: ' . $e, "TIPO"=> 'ERROR')));
+		die(json_encode(array("mensagem"=>'Não foi possivel realizar o cadastro. Ocorreu o erro: ' . $e->getMessage(), "TIPO"=> 'ERROR')));
 	}
 });
-
 
 //------------------------------- AUTENTICAR USUARIO -------------------------------
 

@@ -10,8 +10,11 @@
     var $sobrenome;
     var $email;
     var $senha;
-    var $telefone;
-    var $endereco;
+
+    var $isFace;
+    var $isGoogle;
+
+    var $tipoCadastro;
 
 
     function __construct($conn) {
@@ -19,38 +22,34 @@
       $this->conn = $conn;
     }
 
-    function cadastrar($tipoCadastro) {
+    function cadastrar() {
 
-      if ($tipoCadastro == 1 || $tipoCadastro == 2) { // Verifica se é cadastro pelo Facebook ou Google
+        if($this->tipoCadastro == 1){ // Cadastro pelo Facebook
+          $this->isFace = true;
+          $this->senha = 'Facebook';
+          $this->sobrenome = '';
 
-        $rslt = getUsuarioForEmail(); // Verifica se já existe usuario no app.
-        if (sizeof($rslt) == 0) {
-          cadastrar_usuario();
+        }else if($this->tipoCadastro == 2){ // Cadastro pelo Google
+          $this->isGoogle = true;
+          $this->senha = 'Google';
+          $this->sobrenome = '';
 
-        } else {
+        } else { // Cadastro normal
+            $this->isFace = false;
+            $this->isGoogle = false;
+        }
 
-
+        $rslt = getUsuarioForEmail(); // Verifica se já existe usuário no app.
+        if ( sizeof($rslt) == 0 ){
+          try {
+              cadastrar_usuario();
+              return true;
+          } catch (Exception $e) {
+              die(json_encode(array("mensagem"=>$e->getMessage(), "TIPO"=>'Error')));
           }
-
         }
 
-      } else {
-
-        $rslt = getUsuarioForEmail(); // Verifica se já existe usuario no app.
-        $rsltFace = getUsuarioForReferenciaFacebookOurGoogle($tipoCadastro);
-
-        if ( sizeof($rslt) == 0 ) {
-          cadastrar_usuario();
-
-        } else if( sizeof($rsltFace) == 0 ) {
-
-        }
-
-        die(json_encode(array("mensagem"=>'Usuário já cadastrado.', "TIPO"=>'Error')));
-
-
-      }
-
+        return false
     }
 
     function alterar(){
@@ -65,40 +64,14 @@
       $stmt = $this->conn->getConn()->prepare('SELECT * FROM Usuario WHERE id_usr = :id_usr');
       $stmt->execute(array(':id_usr'=>$this->id_usr));
       // die(json_encode($stmt->fetchAll(PDO::FETCH_COLUMN)));
-      return $stmt->fetchAll();;
+      return $stmt->fetchAll();
     }
 
     function getUsuarioForEmail(){
       $stmt = $this->conn->getConn()->prepare('SELECT * FROM Usuario WHERE usr_email = :usr_email');
       $stmt->execute(array(':usr_email'=>$this->email));
       // die(json_encode($stmt->fetchAll(PDO::FETCH_COLUMN)));
-      return $stmt->fetchAll();;
-    }
-
-    function getUsuarioForReferenciaFacebookOurGoogle($tipoCadastro){
-
-      if($tipoCadastro == 1){// É cadastro pelo Facebook
-
-        $this->senha = sha1("Facebook");
-        $this->sobrenome = "";
-
-        $stmt = $this->conn->getConn()->prepare('SELECT * FROM info_face WHERE face_usr = :face_usr');
-        $stmt->execute(array(':face_usr'=>$this->email));
-
-        // die(json_encode($stmt->fetchAll(PDO::FETCH_COLUMN)));
-
-      } else {
-
-        $this->senha = sha1("Google");
-        $this->sobrenome = "";
-
-        $stmt = $this->conn->getConn()->prepare('SELECT * FROM info_google WHERE goo_usr = :goo_usr');
-        $stmt->execute(array(':goo_usr'=>$this->email));
-        // die(json_encode($stmt->fetchAll(PDO::FETCH_COLUMN)));
-
-      }
-
-      return $stmt->fetchAll();;
+      return $stmt->fetchAll();
     }
 
     function cadastrar_usuario(){
@@ -106,11 +79,9 @@
       $this->conn->beginTransaction();
 
       try {
-        $stmt = $this->conn->prepare('INSERT INTO Usuario (usr_nm, usr_email, usr_sbnm, usr_sn) VALUES (:usr_nm, :usr_email, :usr_sbnm, :usr_sn)');
-        $stmt->execute(array("usr_nm"=>$this->nome, ":usr_email"=>$this->email, ":usr_sbnm"=>$this->sobrenome, "usr_sn"=>$this->senha));
+        $stmt = $this->conn->prepare('INSERT INTO Usuario (usr_nm, usr_email, usr_sbnm, usr_sn,usr_cdt_face, usr_cd_google) VALUES (:usr_nm, :usr_email, :usr_sbnm, :usr_sn, :usr_isFace, :usr_isGoogle)');
+        $stmt->execute(array("usr_nm"=>$this->nome, ":usr_email"=>$this->email, ":usr_sbnm"=>$this->sobrenome, "usr_sn"=>$this->senha, "usr_isFace"=>$this->isFace, "usr_isGoogle"=>$this->isGoogle));
         $this->conn->commit();
-        return true;
-
       } catch (Exception $e) {
         $this->conn->rollback();
         throw new Exception("Error Processing Request", 'Erro ao cadastrar');
@@ -158,6 +129,10 @@
 
     function setTelefone($telefone){
       $this->telefone = $telefone;
+    }
+
+    function setTipoCadastro($tipoCadastro){
+      $this->tipoCadastro = $tipoCadastro;
     }
 
   }
