@@ -1,6 +1,4 @@
 <?php
-use \Firebase\JWT\JWT;
-
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -18,16 +16,6 @@ function validaExecucao($rslt,$operacao){
 		die(json_encode(array('estado'=>true,'texto'=>'Operacao realizada com sucesso!')));
 	else
 		die(json_encode(array('estado'=>false,'texto'=>'Ops, problemas ao tentar realizar a operação de '.$operacao)));
-}
-
-function validaToken($token, $key){
-	$tempo = time();
-	$decoded = JWT::decode($token, $key, array('HS256'));
-	// die(json_encode($decoded->exp));
-	if($decoded->dados->usuario == $key && $decoded->exp > $tempo){
-			return true;
-	}
-	return false;
 }
 
 function getConn(){
@@ -121,96 +109,6 @@ $app->post('/ordenar',function() use ($app){
 	} catch (Exception $e) {
 		die (json_encode(array('estado'=>false,'texto'=>$e->getMessage())));
 	}
-
-});
-
-//----------------------- Cadastra usuário -----------------------------
-
-$app->post('/cadastrar_usuario',function() use ($app){
-	$request = json_decode($app->getInstance()->request()->getBody());
-	$params = array(":nome"=>$request->usuario->nome,
-	 								":email"=>$request->usuario->email,
-								  ":senha"=>$request->usuario->senha,
-									":sobrenome"=>$request->usuario->sobrenome
-									);
-
-	// die(json_encode($request));
-
-	$conn = getConn();
-	$conn->beginTransaction();
-
-	try {
-
-		//Cadastra os dados na tabela de Usuario
-		$stmt = $conn->prepare("INSERT INTO Usuario (usr_nm, usr_email, usr_sn, usr_sbnm) VALUES (:nome,:email,:senha,:sobrenome)");
-		$stmt->execute(array(":nome"=>$request->usuario->nome,":email"=>$request->usuario->email,":senha"=>sha1($request->usuario->senha),":sobrenome"=>$request->usuario->sobrenome));
-		$idUsr = $conn->lastInsertId();
-
-		//Cadastra os dados da na tabela de telefone
-		$stmt = $conn->prepare("INSERT INTO telefone (Usuario_id_usr, tlf_cl, tlf_rs) VALUES (:usuario,:celular,:residencial)");
-		$stmt->execute(array(":usuario"=>$idUsr, ":celular"=>$request->telefone->celular,":residencial"=>$request->telefone->residencial));
-
-		//Cadastra os dados na tabela de endereco
-		$stmt = $conn->prepare("INSERT INTO Endereco (end_cs, end_qd, end_rua, Usuario_id_usr) VALUES (:complemento,:quadra,:rua,:idUsr)");
-		$stmt->execute(array(":complemento"=>$request->endereco->complemento,":quadra"=>$request->endereco->quadra,":rua"=>$request->endereco->rua,":idUsr"=>$idUsr));
-
-		$conn->commit();
-
-		die(json_encode(array('estado'=>true,'texto'=>'Cadastro realizada com sucesso!')));
-	} catch (Exception $e) {
-		$conn->rollback();
-		die (json_encode(array('estado'=>false,'texto'=>$e->getMessage())));
-	}
-
-});
-
-//----------------------- Autenticacao -----------------------------
-
-$app->get('/atenticar_usuario', function () use ($app) {
-
-	$request = json_decode($app->getInstance()->request()->getBody());
-	// $email = $app->request()->params('email');
-	// $senha = $app->request()->params('senha');
-	die(json_encode($request));
-	$email = $request->email;
-	$senha = $request->senha;
-
-	// die(json_encode(sha1($senha)));
-
-	try {
-		$stmt = getConn()->prepare('SELECT * FROM Usuario WHERE usr_email = :email AND usr_sn = :senha');
-		$stmt->execute(array(':email'=>$email, ':senha'=>sha1($senha)));
-		// die(json_encode($stmt->fetchAll(PDO::FETCH_COLUMN)));
-		$rslt = $stmt->fetchAll();
-		// die(json_encode($rslt[0][2]));
-		if(sizeof($rslt) > 0){
-			$key = $email;
-			$tempo = time();
-			// die(json_encode($tempo));
-			$token = array(
-			    "iat" => $tempo,
-					"iss" => "http://localhost",
-					"exp" => $tempo + 1200,
-					"dados" => [
-						"usuario" =>  $rslt[0][2],
-						"sobrenome" => $rslt[0][4]
-					]
-				);
-
-			$jwt = JWT::ENCODE($token, $key);
-			// $valido = validaToken($jwt, $email);
-			// $decoded = JWT::decode($jwt, $key, array('HS256'));
-			// die(json_encode($valido));
-			die(json_encode(array("nome"=>$rslt[0][1], "sobrenome"=>$rslt[0][4], "token"=>$jwt)));
-
-		} else {
-			die (json_encode(array('estado'=>false,'texto'=>'Usuario ou senha invalida.')));
-		}
-
-	} catch (Exception $e) {
-		die (json_encode(array('estado'=>false,'texto'=>$e->getMessage())));
-	}
-
 
 });
 

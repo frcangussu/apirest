@@ -4,6 +4,7 @@
   class Autenticacao {
 
     var $conn;
+    var $token;
 
     function __construct($conn){
       $this->conn = $conn;
@@ -29,14 +30,15 @@
    		$stmt = $this->conn->prepare('SELECT * FROM Usuario WHERE usr_email = :usr_email AND usr_sn = :usr_sn');
    		$stmt->execute(array(':usr_email'=>$email, ':usr_sn'=>sha1($senha)));
    		// die(json_encode($stmt->fetchAll(PDO::FETCH_COLUMN)));
-   		$rslt = $stmt->fetchAll();
+   		$rslt = $stmt->rowCount();
    		// die(json_encode($rslt[0][2]));
- 			$token = $this->gerarToken($email, $rslt[0][4]);
-      return $token;
+ 			$this->token = $this->gerarToken($email, $rslt[0][4]);
+
+      return true;
 
    	} catch (Exception $e) {
       // die(array("messages"=>"Usuario inválido"));
-   		throw new Exception("Usuario inválido", "Usuario invalido!");
+   		return false;
 
    	}
 
@@ -73,7 +75,7 @@
     * @param    object  $usuario
     * @param    string  $sobrenome
     */
-   function gerarToken ($usuario, $sobrenome) {
+   function gerarToken ($usuario, $chave) {
      $tempo = time();
      // die(json_encode($tempo));
      $token = array(
@@ -82,11 +84,11 @@
          "exp" => $tempo + 1200, // timestamp que o tokem valerá
          "dados" => [
            "usuario" =>  $usuario,
-           "sobrenome" => $sobrenome
+           "chave" => $chave
          ]
        );
 
-       $key = sha1($usuario . "portalMangueiral" . $sobrenome);
+       $key = sha1($usuario . "portalMangueiral" . $chave);
        $rtn = JWT::ENCODE($token, $key);
       return $rtn;
    }
@@ -118,6 +120,10 @@
      }
 
      return false;
+   }
+
+   function getToken(){
+     return $this->token;
    }
 
  }

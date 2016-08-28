@@ -22,74 +22,71 @@
       $this->conn = $conn;
     }
 
-    function cadastrar() {
-
-        if($this->tipoCadastro == 1){ // Cadastro pelo Facebook
-          $this->isFace = true;
-          $this->senha = 'Facebook';
-          $this->sobrenome = '';
-
-        }else if($this->tipoCadastro == 2){ // Cadastro pelo Google
-          $this->isGoogle = true;
-          $this->senha = 'Google';
-          $this->sobrenome = '';
-
-        } else { // Cadastro normal
-            $this->isFace = false;
-            $this->isGoogle = false;
-        }
-
-        $rslt = getUsuarioForEmail(); // Verifica se já existe usuário no app.
-        if ( sizeof($rslt) == 0 ){
-          try {
-              cadastrar_usuario();
-              return true;
-          } catch (Exception $e) {
-              die(json_encode(array("mensagem"=>$e->getMessage(), "TIPO"=>'Error')));
-          }
-        }
-
-        return false
-    }
-
-    function alterar(){
-
-    }
-
-    function excluir(){
-
-    }
-
-    function getUsuarioForId(){
-      $stmt = $this->conn->getConn()->prepare('SELECT * FROM Usuario WHERE id_usr = :id_usr');
-      $stmt->execute(array(':id_usr'=>$this->id_usr));
-      // die(json_encode($stmt->fetchAll(PDO::FETCH_COLUMN)));
-      return $stmt->fetchAll();
-    }
-
-    function getUsuarioForEmail(){
-      $stmt = $this->conn->getConn()->prepare('SELECT * FROM Usuario WHERE usr_email = :usr_email');
-      $stmt->execute(array(':usr_email'=>$this->email));
-      // die(json_encode($stmt->fetchAll(PDO::FETCH_COLUMN)));
-      return $stmt->fetchAll();
-    }
-
-    function cadastrar_usuario(){
+    function cadastrar(){
 
       $this->conn->beginTransaction();
 
       try {
-        $stmt = $this->conn->prepare('INSERT INTO Usuario (usr_nm, usr_email, usr_sbnm, usr_sn,usr_cdt_face, usr_cd_google) VALUES (:usr_nm, :usr_email, :usr_sbnm, :usr_sn, :usr_isFace, :usr_isGoogle)');
-        $stmt->execute(array("usr_nm"=>$this->nome, ":usr_email"=>$this->email, ":usr_sbnm"=>$this->sobrenome, "usr_sn"=>$this->senha, "usr_isFace"=>$this->isFace, "usr_isGoogle"=>$this->isGoogle));
+        $stmt = $this->conn->prepare('INSERT INTO Usuario (usr_nm, usr_email, usr_sbnm, usr_sn, usr_cdt_face, usr_cdt_google) VALUES (:usr_nm, :usr_email, :usr_sbnm, :usr_sn, :usr_isFace, :usr_isGoogle)');
+        $stmt->execute(array("usr_nm"=>$this->nome, ":usr_email"=>$this->email, ":usr_sbnm"=>$this->sobrenome, ":usr_sn"=>$this->senha, ":usr_isFace"=>$this->isFace, ":usr_isGoogle"=>$this->isGoogle));
         $this->conn->commit();
+
       } catch (Exception $e) {
         $this->conn->rollback();
-        throw new Exception("Error Processing Request", 'Erro ao cadastrar');
+        die(json_encode($e->getMessage()));
 
       }
 
+      return $stmt->rowCount() > 0;
+
     }
 
+    function alterar(){
+
+      $this->conn->beginTransaction();
+
+      try {
+        $stmt = $this->conn->prepare('UPDATE Usuario SET usr_nm =:nome, usr_email= :email, usr_sbnm=: sobreNome, usr_sn= :senha, usr_cdt_face: :isFace, usr_cdt_google= :isGoogle WHERE usr_id = :id_usr');
+        $rstl = $stmt->execute(array(':nome'=>$this->nome, ':email'=>$this->email, ':sobreNome'=>$this->senha, ':senha'=>$this->senha, ':isFace'=> $this->isFace, ':isGoogle'=> $this->isGoogle, ':id_usr'=> $this->id_usr));
+        $this->conn->commit();
+
+      } catch (Exception $e) {
+        $this->conn->rollback();
+        throw new Exception("Error Processing Request", e.getMessage());
+
+      }
+
+      return $rstl->rowCount();
+    }
+
+    function excluir(){
+      $this->conn->beginTransaction();
+
+      try {
+        $stmt = $this->conn->prepare('DELETE FROM Usuario WHERE usr_id = :id_usr');
+        $rstl = $stmt->execute(array(':id_usr'=>$this->id_usr));
+
+      } catch (Exception $e) {
+        $this->conn->rollback();
+        throw new Exception("Error Processing Request", e.getMessage());
+
+      }
+
+      return $rstl->rowCount();
+    }
+
+    function getUsuarioForId(){
+      $stmt = $this->conn->prepare('SELECT * FROM Usuario WHERE id_usr = :id_usr');
+      $stmt->execute(array(':id_usr'=>$this->id_usr));
+      // die(json_encode($stmt->fetchAll(PDO::FETCH_COLUMN)));
+      return $stmt->fetchObject();
+    }
+
+    function getUsuarioForEmail(){
+      $stmt = $this->conn->prepare('SELECT * FROM Usuario WHERE usr_email = :usr_email');
+      $stmt->execute(array(':usr_email'=>$this->email));
+      return $stmt->fetchObject();
+    }
 
     function getNome(){
       return $this->email;
@@ -123,17 +120,27 @@
       $this->senha = $senha;
     }
 
-    function getTelefone(){
-      return $this->telefone;
+    function isFace(){
+      return $this->isFace;
     }
 
-    function setTelefone($telefone){
-      $this->telefone = $telefone;
+    function setIsFace($isFace){
+      $this->isFace = $isFace;
+    }
+
+    function isGoogle(){
+      return $this->isGoogle;
+    }
+
+    function setIsGoogle($isGoogle){
+      $this->isGoogle = $isGoogle;
     }
 
     function setTipoCadastro($tipoCadastro){
       $this->tipoCadastro = $tipoCadastro;
     }
+
+
 
   }
 
