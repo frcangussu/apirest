@@ -36,20 +36,13 @@ function validaExecucao($rslt,$operacao){
 
 //------------------------------- BUSCAR USUARIO -------------------------------
 
-$app->get('/getUsuario', function() use($app, $autenticacao, $conn) {
+$app->get('/getUsuarioEmail', function() use($app, $autenticacao, $conn) {
 
 	$email = $app->request()->params('email');
 
 	$usuario = new Usuario($conn->getConn());
 	$usuario->setEmail($email);
-	$rslt = $usuario->getUsuarioForEmail();
-
-	if($rslt !== false){
-		die(json_encode($rslt));
-	}
-
-	$app->response()->status(400);
-  $app->response()->header('X-Status-Reason', 'Nao existe usuario');
+	die(json_encode( $usuario->getUsuarioForEmail() ));
 
 });
 
@@ -64,26 +57,49 @@ $app->post('/cadastrar_usuario', function() use($app, $autenticacao, $conn) {
 	$usuario = new Usuario($conn->getConn());
 	$usuario->setNome($request->usuario->nome);
 	$usuario->setEmail($request->usuario->email);
+	$usuario->setSenha($request->usuario->senha);
 	$usuario->setSobreNome($request->usuario->sobreNome);
-	$usuario->setTipoCadastro($request->tipoCadastro);
 
 	// die(json_encode($request->tipoCadastro==1));
-	if($request->tipoCadastro == 1){
+	if($tipo == 1){
 		$usuario->setIsFace(true);
-	}
-
-	if($request->tipoCadastro == 2){
+	} else if($tipo == 2){
 		$usuario->setIsGoogle(true);
+	} else {
+		$usuario->setIsApp(true);
 	}
 
-	die(json_encode($usuario->cadastrar()));
+	die(json_encode( $usuario->cadastrar() ));
+});
+
+//------------------------------- Alterar USUARIO -------------------------------
+
+$app->post('/alterar_usuario', function() use($app, $autenticacao, $conn) {
+
+	$request = json_decode($app->getInstance()->request()->getBody());
+
+	$usuario = new Usuario($conn->getConn());
+
+	$usuario->setNome($request->usuario->nome);
+	$usuario->setEmail($request->usuario->email);
+	$usuario->setSenha($request->usuario->senha);
+	$usuario->setSobreNome($request->usuario->sobreNome);
+	$usuario->setIsFace($request->usuario->isFace);
+	$usuario->setIsGoogle($request->usuario->isGoogle);
+
+	$usuario->setIsApp(true);
+
+	die(json_encode($usuario->alterar($request->usuario->id_usr)));
 });
 
 //------------------------------- AUTENTICAR USUARIO -------------------------------
 
-$app->get('/autenticar_usuario', function() use($app, $autenticacao) {
-	if($autenticacao->autenticar_usuario($app->request()->params('email'), $app->request()->params('senha'))){
-			die(json_encode(array("token"=>$autenticacao->getToken())));
+$app->post('/autenticar_usuario', function() use($app, $autenticacao) {
+	$request = json_decode($app->getInstance()->request()->getBody());
+	$rstl = $autenticacao->autenticar_usuario($request->email, $request->senha);
+
+	if(sizeof($rstl)){
+			die(json_encode(array("usuario"=>$rstl, "token"=>$autenticacao->gerarToken($app->request()->params('email'), $app->request()->params('senha') ))));
 	}
 
 	$app->response()->status(400);
@@ -94,7 +110,7 @@ $app->get('/autenticar_usuario', function() use($app, $autenticacao) {
 
 $app->post('/gerarToken', function() use($app, $autenticacao) {
 	$request = json_decode($app->getInstance()->request()->getBody());
-	$token = $autenticacao->gerarToken($request->usuario->nome, $request->usuario->chave);
+	$token = $autenticacao->gerarToken($request->nome, $request->chave);
 	die(json_encode($token));
 
 });

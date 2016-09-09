@@ -29,16 +29,10 @@
      try {
    		$stmt = $this->conn->prepare('SELECT * FROM Usuario WHERE usr_email = :usr_email AND usr_sn = :usr_sn');
    		$stmt->execute(array(':usr_email'=>$email, ':usr_sn'=>sha1($senha)));
-   		// die(json_encode($stmt->fetchAll(PDO::FETCH_COLUMN)));
-   		$rslt = $stmt->rowCount();
-   		// die(json_encode($rslt[0][2]));
- 			$this->token = $this->gerarToken($email, $rslt[0][4]);
 
-      return true;
-
+   		return $stmt->fetchObject;
    	} catch (Exception $e) {
-      // die(array("messages"=>"Usuario inválido"));
-   		return false;
+   		 throw new Exception("Error Processing Request", 1);
 
    	}
 
@@ -84,7 +78,7 @@
          "exp" => $tempo + 1200, // timestamp que o tokem valerá
          "dados" => [
            "usuario" =>  $usuario,
-           "chave" => $chave
+           "chave" => sha1($chave)
          ]
        );
 
